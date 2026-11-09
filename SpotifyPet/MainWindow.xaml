@@ -1,0 +1,142 @@
+<Window x:Class="SpotifyPet.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Spotify 桌宠 · 0930" Width="198" SizeToContent="Height"
+        ResizeMode="NoResize" WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" Loaded="OnLoaded"
+        PreviewMouseLeftButtonDown="OnPointerDown" PreviewMouseMove="OnPointerMove"
+        PreviewMouseLeftButtonUp="OnPointerUp">
+  <Window.Resources>
+    <LinearGradientBrush x:Key="StageBeamFade" StartPoint="0,0" EndPoint="0,1">
+      <GradientStop Color="#E8FFFFFF" Offset="0" />
+      <GradientStop Color="#A0FFFFFF" Offset="0.38" />
+      <GradientStop Color="#00FFFFFF" Offset="1" />
+    </LinearGradientBrush>
+    <Style x:Key="TransportButton" TargetType="Button">
+      <Setter Property="Width" Value="32" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Foreground" Value="#FFF8E9" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Face" Background="{TemplateBinding Background}"
+                    BorderBrush="Transparent" BorderThickness="2" CornerRadius="30">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Face" Property="BorderBrush" Value="#FFF8E9" />
+              </Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="Face" Property="BorderBrush" Value="#FFD25A" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Face" Property="Opacity" Value="0.72" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="Face" Property="Opacity" Value="0.38" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </Window.Resources>
+  <Window.ContextMenu>
+    <ContextMenu>
+      <MenuItem Header="设置" IsEnabled="False" />
+      <Separator />
+      <MenuItem Header="窗口置顶" IsCheckable="True" Click="OnTopmostChanged" />
+      <Separator />
+      <MenuItem Header="关闭桌宠" Click="OnClose" />
+    </ContextMenu>
+  </Window.ContextMenu>
+  <StackPanel Margin="6">
+    <Canvas x:Name="PetArea" Width="180" Height="197" Margin="0,0,0,4" Background="Transparent">
+      <Path x:Name="CenterStageBeam" Data="M 81,22 H 99 L 148,145 H 32 Z"
+            Opacity="0.65" OpacityMask="{StaticResource StageBeamFade}" IsHitTestVisible="False">
+        <Path.Fill>
+          <SolidColorBrush x:Name="CenterStageColor" Color="#FFD58B" />
+        </Path.Fill>
+      </Path>
+      <Canvas x:Name="SideStageBeams" Visibility="Collapsed" IsHitTestVisible="False">
+        <Path x:Name="LeftStageBeam" Data="M 45,21 H 61 L 82,145 H 0 Z"
+              OpacityMask="{StaticResource StageBeamFade}">
+          <Path.Fill><SolidColorBrush x:Name="LeftStageColor" Color="#FF74BE" /></Path.Fill>
+        </Path>
+        <Path x:Name="RightStageBeam" Data="M 119,21 H 135 L 180,145 H 98 Z"
+              OpacityMask="{StaticResource StageBeamFade}">
+          <Path.Fill><SolidColorBrush x:Name="RightStageColor" Color="#B79AFF" /></Path.Fill>
+        </Path>
+      </Canvas>
+      <Border Canvas.Left="31" Canvas.Top="5" Width="118" Height="22" CornerRadius="9"
+              Background="#30251D" BorderBrush="#75604B" BorderThickness="1" IsHitTestVisible="False">
+        <UniformGrid Rows="1" Columns="3" Margin="2,0">
+          <Ellipse x:Name="LeftStageLens" Width="16" Height="9" Fill="{Binding Fill, ElementName=LeftStageBeam}" Opacity="0.16" />
+          <Ellipse Width="16" Height="9" Fill="{Binding Fill, ElementName=CenterStageBeam}" />
+          <Ellipse x:Name="RightStageLens" Width="16" Height="9" Fill="{Binding Fill, ElementName=RightStageBeam}" Opacity="0.16" />
+        </UniformGrid>
+      </Border>
+      <Grid Canvas.Left="30" Canvas.Top="39" Width="120" Height="156" RenderTransformOrigin="0.5,1">
+        <Grid.RenderTransform>
+          <TransformGroup>
+            <ScaleTransform x:Name="PetBreathing" />
+            <RotateTransform x:Name="PetRotation" Angle="-4" />
+            <TranslateTransform x:Name="PetJump" />
+          </TransformGroup>
+        </Grid.RenderTransform>
+        <Image x:Name="AwakeSprite" Source="Assets/0930-awake.png" Visibility="Collapsed" />
+        <Image x:Name="SingingSprite" Source="Assets/0930-singing.png" Visibility="Collapsed" />
+        <Image x:Name="SleepSprite" Source="Assets/0930-asleep.png" />
+      </Grid>
+      <TextBlock x:Name="SleepBubble" Canvas.Left="143" Canvas.Top="44"
+                 Text="Zz" FontSize="19" FontWeight="Bold" Foreground="#685594" />
+    </Canvas>
+    <Border Width="176" Background="#201A17" CornerRadius="12" Padding="10,8">
+      <StackPanel>
+        <TextBlock x:Name="SongTitle" FontSize="12" FontWeight="SemiBold" Foreground="#FFF8E9"
+                   TextTrimming="CharacterEllipsis" Text="读取 Spotify…"
+                   ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+        <Grid x:Name="SeekArea" Height="17" Margin="0,2,0,0" Background="Transparent" Cursor="Hand"
+              ToolTip="点击或拖动调整播放位置" LostMouseCapture="OnSeekCaptureLost">
+        <ProgressBar x:Name="SongProgress" Height="5" VerticalAlignment="Center" Maximum="1"
+                     IsHitTestVisible="False"
+                     Foreground="#FFD25A" Background="#514740" Focusable="False"
+                     AutomationProperties.Name="歌曲播放进度">
+          <ProgressBar.Template>
+            <ControlTemplate TargetType="ProgressBar">
+              <Grid>
+                <Border x:Name="PART_Track" Background="{TemplateBinding Background}" CornerRadius="3" />
+                <Border x:Name="PART_Indicator" HorizontalAlignment="Left"
+                        Background="{TemplateBinding Foreground}" CornerRadius="3" />
+              </Grid>
+            </ControlTemplate>
+          </ProgressBar.Template>
+        </ProgressBar>
+        </Grid>
+        <DockPanel TextBlock.FontSize="10" TextBlock.Foreground="#D7C8B3">
+          <TextBlock x:Name="ElapsedTime" Text="--:--" />
+          <TextBlock x:Name="TotalTime" Text="--:--" HorizontalAlignment="Right" />
+        </DockPanel>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,3,0,0">
+          <Button x:Name="PreviousButton" Style="{StaticResource TransportButton}"
+                  ToolTip="上一首" AutomationProperties.Name="上一首" IsEnabled="False" Click="OnPrevious">
+            <Path Width="18" Height="18" Stretch="Uniform" Fill="#FFF8E9" Data="M 0,0 H 3 V 18 H 0 Z M 4,9 L 18,0 V 18 Z" />
+          </Button>
+          <Button x:Name="PlayPauseButton" Style="{StaticResource TransportButton}" Width="39" Height="39"
+                  Margin="13,0" Background="#FFD25A" ToolTip="播放" AutomationProperties.Name="播放"
+                  IsEnabled="False" Click="OnPlayPause">
+            <Path x:Name="PlayPauseIcon" Width="18" Height="18" Stretch="Uniform" Fill="#201A17" Data="M 2,0 L 18,9 L 2,18 Z" />
+          </Button>
+          <Button x:Name="NextButton" Style="{StaticResource TransportButton}"
+                  ToolTip="下一首" AutomationProperties.Name="下一首" IsEnabled="False" Click="OnNext">
+            <Path Width="18" Height="18" Stretch="Uniform" Fill="#FFF8E9" Data="M 0,0 L 14,9 L 0,18 Z M 15,0 H 18 V 18 H 15 Z" />
+          </Button>
+        </StackPanel>
+        <TextBlock x:Name="Status" Foreground="#FFF8E9" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</Window>

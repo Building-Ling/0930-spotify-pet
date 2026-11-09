@@ -1,0 +1,8 @@
+bin/
+obj/
+dist/
+Output/
+.vs/
+*.user
+*.exe
+*.zip
