@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Windows.Media.Control;
 
@@ -18,6 +19,11 @@ public partial class MainWindow : Window
     private static readonly Geometry PauseIcon = Geometry.Parse("M 2,0 H 7 V 18 H 2 Z M 11,0 H 16 V 18 H 11 Z");
     private GlobalSystemMediaTransportControlsSessionManager? manager;
     private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private readonly DispatcherTimer pianoTimer = new() { Interval = TimeSpan.FromMilliseconds(360) };
+    private const int PianoBeatsPerGlance = 6;
+    private ImageSource[,]? pianoFrames;
+    private int pianoBeat;
+    private bool pianoMode;
     private bool busy;
     private bool petAwake;
     private bool spotifyPlaying;
@@ -36,7 +42,16 @@ public partial class MainWindow : Window
         InitializeComponent();
         StartSleepAnimation();
         timer.Tick += async (_, _) => await RefreshAsync();
-        Closed += (_, _) => timer.Stop();
+        pianoTimer.Tick += (_, _) =>
+        {
+            pianoBeat = (pianoBeat + 1) % (2 * PianoBeatsPerGlance);
+            PianoSprite.Source = pianoFrames![pianoBeat % 2, pianoBeat / PianoBeatsPerGlance];
+        };
+        Closed += (_, _) =>
+        {
+            timer.Stop();
+            pianoTimer.Stop();
+        };
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -137,7 +152,9 @@ public partial class MainWindow : Window
     {
         UpdateLamp();
         var awake = spotifyPlaying || dragging || reacting;
-        SingingSprite.Visibility = spotifyPlaying ? Visibility.Visible : Visibility.Collapsed;
+        var playingPiano = spotifyPlaying && pianoMode;
+        UpdatePianoSprite(playingPiano);
+        SingingSprite.Visibility = spotifyPlaying && !playingPiano ? Visibility.Visible : Visibility.Collapsed;
         AwakeSprite.Visibility = awake && !spotifyPlaying ? Visibility.Visible : Visibility.Collapsed;
 
         // Refreshing Spotify metadata must not restart an ongoing animation.
@@ -166,6 +183,67 @@ public partial class MainWindow : Window
         {
             StartSleepAnimation();
         }
+    }
+
+    private void UpdatePianoSprite(bool playingPiano)
+    {
+        PianoSprite.Visibility = playingPiano ? Visibility.Visible : Visibility.Collapsed;
+        if (!playingPiano)
+        {
+            pianoTimer.Stop();
+            return;
+        }
+
+        if (pianoTimer.IsEnabled)
+            return;
+
+        pianoFrames ??= LoadPianoFrames();
+        pianoBeat = 0;
+        PianoSprite.Source = pianoFrames[0, 0];
+        pianoTimer.Start();
+    }
+
+    private static ImageSource[,] LoadPianoFrames()
+    {
+        var basePose = new BitmapImage(new Uri("pack://application:,,,/Assets/0930-piano.png"));
+        var alternatePose = new BitmapImage(new Uri("pack://application:,,,/Assets/0930-piano-alternate.png"));
+        var frames = new ImageSource[2, 2];
+        var canvas = new Rect(0, 0, basePose.PixelWidth, basePose.PixelHeight);
+        // Overlay only the moving regions so the approved silhouette stays fixed.
+        var eyes = new Rect(215, 395, 445, 160);
+        var keyboard = new Rect(218, 1058, 571, 174);
+        for (var paw = 0; paw < 2; paw++)
+        {
+            for (var gaze = 0; gaze < 2; gaze++)
+            {
+                var drawing = new DrawingGroup();
+                using (var context = drawing.Open())
+                {
+                    context.DrawImage(basePose, canvas);
+                    if (paw == 1)
+                    {
+                        context.PushClip(new RectangleGeometry(keyboard));
+                        context.DrawImage(alternatePose, canvas);
+                        context.Pop();
+                    }
+                    if (gaze == 1)
+                    {
+                        context.PushClip(new RectangleGeometry(eyes));
+                        context.DrawImage(alternatePose, canvas);
+                        context.Pop();
+                    }
+                }
+                drawing.Freeze();
+                frames[paw, gaze] = new DrawingImage(drawing);
+            }
+        }
+        return frames;
+    }
+
+    private void OnPianoModeChanged(object sender, RoutedEventArgs e)
+    {
+        pianoMode = ((MenuItem)sender).IsChecked;
+        UpdatePet();
     }
 
     private void UpdateLamp()

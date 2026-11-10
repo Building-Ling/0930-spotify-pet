@@ -9,5 +9,7 @@
     <Resource Include="Assets\0930-awake.png" />
     <Resource Include="Assets\0930-asleep.png" />
     <Resource Include="Assets\0930-singing.png" />
+    <Resource Include="Assets\0930-piano.png" />
+    <Resource Include="Assets\0930-piano-alternate.png" />
   </ItemGroup>
 </Project>

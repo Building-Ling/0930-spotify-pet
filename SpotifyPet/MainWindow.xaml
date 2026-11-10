@@ -49,6 +49,7 @@
       <MenuItem Header="设置" IsEnabled="False" />
       <Separator />
       <MenuItem Header="窗口置顶" IsCheckable="True" Click="OnTopmostChanged" />
+      <MenuItem Header="钢琴模式" IsCheckable="True" Click="OnPianoModeChanged" />
       <Separator />
       <MenuItem Header="关闭桌宠" Click="OnClose" />
     </ContextMenu>
@@ -89,6 +90,7 @@
         </Grid.RenderTransform>
         <Image x:Name="AwakeSprite" Source="Assets/0930-awake.png" Visibility="Collapsed" />
         <Image x:Name="SingingSprite" Source="Assets/0930-singing.png" Visibility="Collapsed" />
+        <Image x:Name="PianoSprite" Visibility="Collapsed" />
         <Image x:Name="SleepSprite" Source="Assets/0930-asleep.png" />
       </Grid>
       <TextBlock x:Name="SleepBubble" Canvas.Left="143" Canvas.Top="44"
