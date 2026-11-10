@@ -4,9 +4,9 @@ Windows 桌宠。Spotify 播放时它会唱歌，暂停时会睡觉。右键角�
 
 0930 is a Windows desktop pet that sings while Spotify plays and sleeps when playback pauses. Right-click the pet to toggle **Piano Mode** (「钢琴模式」), keep the window on top, or close it. The player supports play/pause, track skipping, and seeking.
 
-<img src="SpotifyPet/Assets/0930-piano.png" alt="0930 desktop pet playing a compact piano" width="240">
+<img src="docs/player-demo.gif" alt="0930 desktop pet singing under animated stage lights above the Spotify player, with song title, progress bar, and playback buttons" width="238">
 
-钢琴模式效果图 · Piano Mode artwork
+完整播放器演示（示例曲目） · Full player preview with a sample track
 
 ## 本地开发 / Run locally
 
