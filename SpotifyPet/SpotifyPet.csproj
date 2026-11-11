@@ -11,5 +11,6 @@
     <Resource Include="Assets\0930-singing.png" />
     <Resource Include="Assets\0930-piano.png" />
     <Resource Include="Assets\0930-piano-alternate.png" />
+    <Resource Include="Assets\0930-feeding.png" />
   </ItemGroup>
 </Project>

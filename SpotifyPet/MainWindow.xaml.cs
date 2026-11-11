@@ -24,6 +24,8 @@ public partial class MainWindow : Window
     private ImageSource[,]? pianoFrames;
     private int pianoBeat;
     private bool pianoMode;
+    private readonly DispatcherTimer feedingTimer = new();
+    private bool feedingMode;
     private bool busy;
     private bool petAwake;
     private bool spotifyPlaying;
@@ -47,10 +49,12 @@ public partial class MainWindow : Window
             pianoBeat = (pianoBeat + 1) % (2 * PianoBeatsPerGlance);
             PianoSprite.Source = pianoFrames![pianoBeat % 2, pianoBeat / PianoBeatsPerGlance];
         };
+        feedingTimer.Tick += OnEatingTick;
         Closed += (_, _) =>
         {
             timer.Stop();
             pianoTimer.Stop();
+            feedingTimer.Stop();
         };
     }
 
@@ -151,11 +155,14 @@ public partial class MainWindow : Window
     private void UpdatePet()
     {
         UpdateLamp();
+        PerformanceSprite.Visibility = feedingMode ? Visibility.Collapsed : Visibility.Visible;
+        FeedingScene.Visibility = feedingMode ? Visibility.Visible : Visibility.Collapsed;
         var awake = spotifyPlaying || dragging || reacting;
-        var playingPiano = spotifyPlaying && pianoMode;
+        var playingPiano = spotifyPlaying && pianoMode && !feedingMode;
         UpdatePianoSprite(playingPiano);
         SingingSprite.Visibility = spotifyPlaying && !playingPiano ? Visibility.Visible : Visibility.Collapsed;
         AwakeSprite.Visibility = awake && !spotifyPlaying ? Visibility.Visible : Visibility.Collapsed;
+        SleepBubble.Visibility = awake || feedingMode ? Visibility.Collapsed : Visibility.Visible;
 
         // Refreshing Spotify metadata must not restart an ongoing animation.
         if (petAwake == awake)
@@ -163,7 +170,6 @@ public partial class MainWindow : Window
 
         petAwake = awake;
         SleepSprite.Visibility = awake ? Visibility.Collapsed : Visibility.Visible;
-        SleepBubble.Visibility = SleepSprite.Visibility;
 
         PetRotation.BeginAnimation(RotateTransform.AngleProperty, null);
         PetBreathing.BeginAnimation(ScaleTransform.ScaleYProperty, null);
@@ -243,15 +249,83 @@ public partial class MainWindow : Window
     private void OnPianoModeChanged(object sender, RoutedEventArgs e)
     {
         pianoMode = ((MenuItem)sender).IsChecked;
+        if (pianoMode)
+        {
+            FeedingModeMenu.IsChecked = false;
+            feedingMode = false;
+            ResetFeeding();
+        }
         UpdatePet();
+    }
+
+    private void OnFeedingModeChanged(object sender, RoutedEventArgs e)
+    {
+        feedingMode = ((MenuItem)sender).IsChecked;
+        if (feedingMode)
+        {
+            PianoModeMenu.IsChecked = false;
+            pianoMode = false;
+        }
+        else
+        {
+            ResetFeeding();
+        }
+        UpdatePet();
+    }
+
+    private void OnFeedPot(object sender, RoutedEventArgs e)
+    {
+        if (!feedingMode || !FeedPotButton.IsEnabled)
+            return;
+
+        FeedPotButton.IsEnabled = false;
+        FeedPotButton.ToolTip = "0930 正在吃牛肉丸";
+        MovingMeatball.Visibility = Visibility.Visible;
+        feedingTimer.Interval = TimeSpan.FromMilliseconds(440);
+        feedingTimer.Start();
+    }
+
+    private void OnEatingTick(object? sender, EventArgs e)
+    {
+        if (EatingMouth.Visibility == Visibility.Visible)
+        {
+            ResetFeeding();
+            return;
+        }
+
+        feedingTimer.Interval = TimeSpan.FromMilliseconds(420);
+        EatingMouth.Visibility = Visibility.Visible;
+        var bite = TimeSpan.FromMilliseconds(330);
+        MovingMeatball.BeginAnimation(Canvas.LeftProperty, new DoubleAnimation(37.5, bite));
+        MovingMeatball.BeginAnimation(Canvas.TopProperty, new DoubleAnimation(58.5, bite));
+        var swallow = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(120))
+        {
+            BeginTime = TimeSpan.FromMilliseconds(250),
+        };
+        MeatballScale.BeginAnimation(ScaleTransform.ScaleXProperty, swallow);
+        MeatballScale.BeginAnimation(ScaleTransform.ScaleYProperty, swallow);
+    }
+
+    private void ResetFeeding()
+    {
+        feedingTimer.Stop();
+        MovingMeatball.Visibility = Visibility.Hidden;
+        EatingMouth.Visibility = Visibility.Hidden;
+        MovingMeatball.BeginAnimation(Canvas.LeftProperty, null);
+        MovingMeatball.BeginAnimation(Canvas.TopProperty, null);
+        MeatballScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        MeatballScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        FeedPotButton.IsEnabled = true;
+        FeedPotButton.ToolTip = "投喂牛肉丸";
     }
 
     private void UpdateLamp()
     {
-        if (lampPlaying == spotifyPlaying)
+        var useStageLights = spotifyPlaying && !feedingMode;
+        if (lampPlaying == useStageLights)
             return;
 
-        lampPlaying = spotifyPlaying;
+        lampPlaying = useStageLights;
         SideStageBeams.Visibility = lampPlaying ? Visibility.Visible : Visibility.Collapsed;
         LeftStageLens.Opacity = RightStageLens.Opacity = lampPlaying ? 1 : 0.16;
         CenterStageBeam.Opacity = lampPlaying ? 0.9 : 0.65;
@@ -294,6 +368,11 @@ public partial class MainWindow : Window
 
     private void OnPointerDown(object sender, MouseButtonEventArgs e)
     {
+        if (feedingMode && FeedPotButton.IsMouseOver)
+        {
+            pressPosition = null;
+            return;
+        }
         if (SeekArea.IsMouseOver)
         {
             pressPosition = null;

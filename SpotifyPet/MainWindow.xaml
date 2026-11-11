@@ -49,7 +49,8 @@
       <MenuItem Header="设置" IsEnabled="False" />
       <Separator />
       <MenuItem Header="窗口置顶" IsCheckable="True" Click="OnTopmostChanged" />
-      <MenuItem Header="钢琴模式" IsCheckable="True" Click="OnPianoModeChanged" />
+      <MenuItem x:Name="PianoModeMenu" Header="钢琴模式" IsCheckable="True" Click="OnPianoModeChanged" />
+      <MenuItem x:Name="FeedingModeMenu" Header="喂食模式" IsCheckable="True" Click="OnFeedingModeChanged" />
       <Separator />
       <MenuItem Header="关闭桌宠" Click="OnClose" />
     </ContextMenu>
@@ -80,7 +81,7 @@
           <Ellipse x:Name="RightStageLens" Width="16" Height="9" Fill="{Binding Fill, ElementName=RightStageBeam}" Opacity="0.16" />
         </UniformGrid>
       </Border>
-      <Grid Canvas.Left="30" Canvas.Top="39" Width="120" Height="156" RenderTransformOrigin="0.5,1">
+      <Grid x:Name="PerformanceSprite" Canvas.Left="30" Canvas.Top="39" Width="120" Height="156" RenderTransformOrigin="0.5,1">
         <Grid.RenderTransform>
           <TransformGroup>
             <ScaleTransform x:Name="PetBreathing" />
@@ -93,6 +94,46 @@
         <Image x:Name="PianoSprite" Visibility="Collapsed" />
         <Image x:Name="SleepSprite" Source="Assets/0930-asleep.png" />
       </Grid>
+      <Canvas x:Name="FeedingScene" Canvas.Left="30" Canvas.Top="39" Width="120" Height="156" Visibility="Collapsed">
+        <Canvas.Resources>
+          <Style x:Key="Meatball" TargetType="Ellipse">
+            <Setter Property="Width" Value="18" />
+            <Setter Property="Height" Value="14" />
+            <Setter Property="Stroke" Value="#69412C" />
+            <Setter Property="StrokeThickness" Value="0.7" />
+            <Setter Property="Fill">
+              <Setter.Value>
+                <RadialGradientBrush GradientOrigin="0.35,0.25">
+                  <GradientStop Offset="0" Color="#E6B177" />
+                  <GradientStop Offset="1" Color="#98603D" />
+                </RadialGradientBrush>
+              </Setter.Value>
+            </Setter>
+          </Style>
+        </Canvas.Resources>
+        <Image Width="120" Height="156" Source="Assets/0930-feeding.png" IsHitTestVisible="False" />
+        <Ellipse x:Name="EatingMouth" Canvas.Left="43" Canvas.Top="63" Width="7" Height="5"
+                 Fill="#51261C" Visibility="Hidden" IsHitTestVisible="False" />
+        <Ellipse x:Name="MovingMeatball" Canvas.Left="48" Canvas.Top="114" Style="{StaticResource Meatball}"
+                 Visibility="Hidden" IsHitTestVisible="False" RenderTransformOrigin="0.5,0.5">
+          <Ellipse.RenderTransform>
+            <ScaleTransform x:Name="MeatballScale" />
+          </Ellipse.RenderTransform>
+        </Ellipse>
+        <Button x:Name="FeedPotButton" Canvas.Left="35" Canvas.Top="111" Width="42" Height="21" Cursor="Hand"
+                AutomationProperties.Name="投喂牛肉丸" ToolTip="投喂牛肉丸" Click="OnFeedPot">
+          <Button.Template>
+            <ControlTemplate TargetType="Button">
+              <Border x:Name="PotHitArea" Background="Transparent" BorderThickness="1" CornerRadius="10" />
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                  <Setter TargetName="PotHitArea" Property="BorderBrush" Value="#FFD25A" />
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Button.Template>
+        </Button>
+      </Canvas>
       <TextBlock x:Name="SleepBubble" Canvas.Left="143" Canvas.Top="44"
                  Text="Zz" FontSize="19" FontWeight="Bold" Foreground="#685594" />
     </Canvas>
